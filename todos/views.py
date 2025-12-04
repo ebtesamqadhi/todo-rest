@@ -22,3 +22,16 @@ def task_get(request):
             "tasks": taskserializer.data
         }
         return Response(data, status=200)
+
+@api_view(['GET','DELETE'])
+def task_detail(request, pk):
+    try:
+        task = Task.objects.get(pk=pk)
+    except Task.DoesNotExist:
+        return Response({"error":"Task not found"},status=404)
+    if request.method == 'GET':
+        taskserializer = TaskSerializer(task)
+        return Response(taskserializer.data, status=200)
+    elif request.method == 'DELETE':
+        task.delete()
+        return Response(status=204)
