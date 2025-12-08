@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response 
 from .models import Task
@@ -23,15 +23,28 @@ def task_get(request):
         }
         return Response(data, status=200)
 
-@api_view(['GET','DELETE'])
+@api_view(['GET','DELETE','PUT','PATCH'])
 def task_detail(request, pk):
-    try:
-        task = Task.objects.get(pk=pk)
-    except Task.DoesNotExist:
-        return Response({"error":"Task not found"},status=404)
+    task = get_object_or_404(Task, pk=pk)
+
     if request.method == 'GET':
         taskserializer = TaskSerializer(task)
         return Response(taskserializer.data, status=200)
+    
     elif request.method == 'DELETE':
         task.delete()
         return Response(status=204)
+    
+    elif request.method == 'PUT':
+        taskserializer = TaskSerializer(instance=task, data = request.data)
+        if taskserializer.is_valid():
+            taskserializer.save()
+            return Response(taskserializer.data, status= 200)
+        return Response(taskserializer.errors, status=400)
+    
+    elif request.method == 'PATCH':
+        taskserializer = TaskSerializer(instance=task, data = request.data, partial=True)
+        if taskserializer.is_valid():
+            taskserializer.save()
+            return Response(taskserializer.data, status= 200)
+        return Response(taskserializer.errors, status=400)
