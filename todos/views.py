@@ -3,6 +3,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response 
 from .models import Task
 from .serializer import TaskSerializer
+from .filters import ToDoFilter
+from rest_framework.pagination import PageNumberPagination
 # Create your views here.
 
 @api_view(['GET','POST'])
@@ -15,10 +17,25 @@ def task_get(request):
         return Response(taskserializer.errors, status=400)
                
     elif request.method == 'GET':
-        tasks = Task.objects.all()
-        taskserializer = TaskSerializer(tasks, many=True)
+        filterset = ToDoFilter(request.GET, queryset= Task.objects.all().order_by('id')).qs
+        if not filterset.exists():
+            return Response({'message':'No Data'}, status=200)
+        
+        taskcount = filterset.count()
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 2
+        currnet_page = paginator.get_page_number(request,paginator)
+        queryset = paginator.paginate_queryset(filterset,request)
+
+        taskserializer = TaskSerializer(queryset, many=True)
+
         data = {
-            "count": tasks.count(),
+            "previous_page": paginator.get_previous_link(),
+            "next_page": paginator.get_next_link(),
+            "current_page": currnet_page,
+            "total_pages" : paginator.page.paginator.num_pages,
+            "tasks_Count": taskcount,
             "tasks": taskserializer.data
         }
         return Response(data, status=200)
