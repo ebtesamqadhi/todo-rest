@@ -38,6 +38,7 @@ def task_get(request):
             "tasks_Count": taskcount,
             "tasks": taskserializer.data
         }
+        print(1/0)
         return Response(data, status=200)
 
 @api_view(['GET','DELETE','PUT','PATCH'])
